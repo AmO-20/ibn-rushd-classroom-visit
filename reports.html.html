@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>أرشيف الزيارات الصفية | مدارس ابن رشد</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f7f4;color:#24352c;font-family:Tahoma,Arial,sans-serif}
+header{background:linear-gradient(120deg,#105638,#218357);color:white;text-align:center;padding:22px}
+header img{width:95px;height:95px;object-fit:contain;background:white;border-radius:14px;padding:5px}h1{font-size:23px}
+main{max-width:1000px;margin:22px auto;padding:0 12px}.card{background:white;padding:20px;border-radius:14px;margin:15px 0;box-shadow:0 3px 14px #173c2812}
+h2{color:#176b45;font-size:20px}label{display:block;font-weight:bold;margin:12px 0 7px}
+input{width:100%;padding:12px;border:1px solid #cbd8cf;border-radius:9px;font:inherit}
+button,.btn{border:0;border-radius:8px;padding:11px 16px;font:inherit;font-weight:bold;cursor:pointer;background:#176b45;color:white}
+.gold{background:#c69b38;color:#18251d}.red{background:#a52e2e}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.report{border:1px solid #dce8df;border-radius:11px;padding:15px;margin:12px 0}.report h3{color:#176b45;margin-top:0}
+.muted{color:#68786e;font-size:13px}.hidden{display:none!important}.notice{padding:12px;border-radius:8px;background:#edf7ef;margin:10px 0}
+.error{color:#a22;background:#fff0ef;padding:10px;border-radius:8px}table{width:100%;border-collapse:collapse;margin-top:12px}
+td,th{padding:9px;border:1px solid #dce5de;text-align:right}th{background:#edf4ef}a{color:#176b45}
+footer{text-align:center;padding:20px;color:#68786e}@media print{.no-print{display:none!important}body{background:white}.card,.report{box-shadow:none}}
+</style></head><body>
+<header><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuLk5bR1ni6ys-QIgWOQWxMebvicBWO1rJGzfkJuIchNVIpRky3_LkD0o&s=10" alt="شعار مدارس ابن رشد">
+<h1>أرشيف تقارير الزيارة الصفية</h1><p>مدارس ابن رشد</p></header><main>
+<section class="card no-print" id="loginCard"><h2>تسجيل الدخول إلى الأرشيف</h2>
+<label for="email">البريد الإلكتروني</label><input id="email" type="email" autocomplete="username" placeholder="البريد الإلكتروني">
+<label for="password">كلمة المرور</label><input id="password" type="password" autocomplete="current-password" placeholder="كلمة المرور">
+<div class="actions"><button id="loginButton" onclick="login()">دخول</button><a href="index.html" class="btn gold" style="text-decoration:none">العودة للرئيسية</a></div><p id="loginStatus"></p></section>
+<section id="archive" class="hidden"><div class="card no-print"><div class="actions" style="justify-content:space-between">
+<a href="index.html" class="btn gold" style="text-decoration:none">العودة للرئيسية</a><button onclick="logout()">تسجيل الخروج</button></div>
+<h2>تقارير الزيارة الصفية</h2><label for="search">البحث في التقارير</label><input id="search" placeholder="ابحث باسم الموظف أو التخصص أو التاريخ..." oninput="renderReports()">
+<div class="actions"><button onclick="loadReports()">تحديث الأرشيف</button><button class="gold" onclick="window.print()">طباعة التقارير</button></div><p id="archiveStatus"></p></div><div id="reportsList"></div></section>
+</main><footer>مدارس ابن رشد — أرشيف الزيارة الصفية</footer>
+<script>
+const SUPABASE_URL="https://dezqiqqwmztzvctzodwo.supabase.co",SUPABASE_KEY="sb_publishable_ZTzT3g_9GcyINT8XA-rzCQ_bUiFSkHD";
+const TABLE="classroom_visit_reports",BUCKET="classroom-visit-evidence",db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);let reports=[];
+async function login(){const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value,status=document.getElementById("loginStatus"),button=document.getElementById("loginButton");
+if(!email||!password){status.textContent="أدخل البريد الإلكتروني وكلمة المرور.";status.className="error";return;}button.disabled=true;status.textContent="جارٍ تسجيل الدخول...";
+const {error}=await db.auth.signInWithPassword({email,password});button.disabled=false;if(error){status.textContent="تعذر تسجيل الدخول: "+error.message;status.className="error";return;}await showArchive();}
+async function showArchive(){document.getElementById("loginCard").classList.add("hidden");document.getElementById("archive").classList.remove("hidden");await loadReports();}
+async function logout(){await db.auth.signOut();reports=[];document.getElementById("archive").classList.add("hidden");document.getElementById("loginCard").classList.remove("hidden");document.getElementById("password").value="";}
+async function loadReports(){const status=document.getElementById("archiveStatus");status.textContent="جارٍ تحميل التقارير...";const {data,error}=await db.from(TABLE).select("*").order("created_at",{ascending:false});
+if(error){status.textContent="تعذر تحميل التقارير: "+error.message;status.className="error";return;}reports=data||[];status.textContent="عدد التقارير المحفوظة: "+reports.length;status.className="notice";renderReports();}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function dtext(v){if(!v)return"غير محدد";const p=String(v).slice(0,10).split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:esc(v);}
+function renderReports(){const q=document.getElementById("search").value.trim().toLowerCase(),list=document.getElementById("reportsList");
+const rows=reports.filter(r=>[r.visit_date,r.employee,r.specialty].some(v=>String(v||"").toLowerCase().includes(q)));
+if(!rows.length){list.innerHTML='<div class="card">لا توجد تقارير مطابقة لبحثك.</div>';return;}
+list.innerHTML=rows.map(r=>`<article class="report"><h3>${esc(r.employee||"زيارة صفية")}</h3><p><b>التخصص:</b> ${esc(r.specialty)}</p>
+<p><b>تاريخ الزيارة:</b> ${dtext(r.visit_date)}</p><p class="muted">تاريخ الإرسال: ${esc(r.created_at?new Date(r.created_at).toLocaleString("ar-SA"):"غير محدد")}</p>
+<div class="actions no-print"><button onclick="showDetails('${r.id}')">عرض التفاصيل</button><button class="red" onclick="deleteReport('${r.id}')">حذف التقرير</button></div><div id="details-${r.id}"></div></article>`).join("");}
+const criterionTitles=["تنفذ المدرسة برامج وأنشطة لتعزيز القيم الإسلامية والهوية الوطنية لدى المتعلمين", "تنفذ المدرسة إجراءات تضمن مناخاً آمناً للتعلم والنمو نفسياً واجتماعياً", "يتوافر في بيئة التعلم مصادر وأنشطة متنوعة للتعلم تلبي احتياجات المتعلمين، ومنهم ذوو الإعاقة والموهوبون", "يدار الوقت في بيئة التعلم بفاعلية؛ لدعم التعلم وتلبية احتياجات المتعلمين، ومنهم ذوو الإعاقة والموهوبون", "يتاح للمتعلمين فرص متكافئة في الأنشطة والمناقشة الصفية، واستخدام مصادر التعلم", "توفر المدرسة مصادر تعلم متنوعة تدعم تنفيذ المناهج لتحقيق نواتج التعلم المستهدفة", "ينفذ المعلم أنشطة واستراتيجيات تدريس تستوفي نواتج التعلم المستهدفة في المنهج، وتتسق معها", "تتنوع استراتيجيات التدريس وفقاً لقدرات المتعلمين، وتراعي الفروق الفردية بينهم", "يستخدم المعلم مصادر تعلم رقمية تلبي احتياجات المتعلمين بمختلف فئاتهم", "تنفذ المدرسة أنشطة تعليم وتعلم تركز على تطبيقات عملية ترتبط بحياة المتعلمين", "تشجع بيئة التعلم داخل الصف على تنمية مهارات القراءة والكتابة لدى المتعلمين", "تشجع بيئة التعلم داخل الصف على تنمية المهارات العددية (الحساب) لدى المتعلمين", "تشجع الممارسات التدريسية على تنمية مهارات التفكير والبحث والابتكار لدى المتعلمين", "تشجع بيئة التعلم تنمية المهارات العاطفية والاجتماعية لدى المتعلمين", "يستخدم المعلم أساليب تحفيز تعزز الدافعية لدى المتعلمين", "يشارك المتعلمون في أنشطة التعلم بفاعلية، ويستمتعون بها", "يستخدم المعلمون أساليب وأدوات تقويم متنوعة تشخيصية وبنائية وختامية للكشف عن الفروق الفردية في مستويات أداء المتعلمين المختلفة", "يطبق المعلم أساليب وأدوات تقويم متنوعة لقياس مستوى تحقق نواتج التعلم المستهدفة في المنهج لدى المتعلمين", "يقدم المعلم تغذية راجعة متنوعة للمتعلمين حسب الموقف التعليمي تركز على تحسين أدائهم", "يظهر المتعلمون الاعتزاز بالقيم والهوية الوطنية", "يظهر المتعلمون الاتجاهات الإيجابية نحو ذواتهم والآخرين", "يظهر المتعلمون التزاماً بالممارسات الصحية السليمة", "يلتزم المتعلمون بقواعد السلوك والانضباط", "يظهر المتعلمون الاستقلالية، والقدرة على التعلم الذاتي", "يظهر المتعلمون الاعتزاز بثقافتهم واحترام التنوع الثقافي في المجتمع"];
+async function showDetails(id){const r=reports.find(x=>String(x.id)===String(id));if(!r)return;const target=document.getElementById("details-"+id);if(target.dataset.open==="yes"){target.innerHTML="";target.dataset.open="no";return;}target.dataset.open="yes";
+let html='<div class="card"><h3>تفاصيل الزيارة الصفية</h3><p><b>تاريخ الزيارة:</b> '+dtext(r.visit_date)+'</p><p><b>اسم الموظف:</b> '+esc(r.employee)+'</p><p><b>التخصص:</b> '+esc(r.specialty)+'</p><h4>التقييمات</h4>';
+const grouped={};Object.entries(r.ratings||{}).forEach(([k,v])=>{const match=k.match(/ — (\\d+)$/);const n=match?Number(match[1]):0;const indicator=match?k.slice(0,match.index):k;(grouped[n]??=[]).push({indicator,value:v});});
+Object.keys(grouped).sort((x,y)=>Number(x)-Number(y)).forEach(n=>{const title=Number(n)>0&&criterionTitles[Number(n)-1]?criterionTitles[Number(n)-1]:"مؤشرات أخرى";html+='<section class="criterion-block"><h5 class="criterion-title">'+(n!=="0"?n+". ":"")+esc(title)+'</h5><table><tr><th>البند / مؤشر الأداء</th><th>التقييم</th></tr>';grouped[n].forEach(item=>{html+='<tr><td>'+esc(item.indicator)+'</td><td>'+esc(item.value)+'</td></tr>';});html+='</table></section>';});
+html+='<h4>جوانب التميز</h4><p>'+esc(r.excellence||"لا توجد ملاحظات")+'</p><h4>الاحتياجات التدريبية</h4><p>'+esc(r.training_needs||"لا توجد احتياجات مسجلة")+'</p><h4>المرفقات</h4><div id="files-'+id+'">جارٍ تجهيز روابط الملفات...</div><div class="actions no-print"><button class="gold" onclick="window.print()">طباعة التقرير</button></div></div>';
+target.innerHTML=html;const fs=Array.isArray(r.files)?r.files:[],holder=document.getElementById("files-"+id);if(!fs.length){holder.textContent="لا توجد مرفقات.";return;}let links=[];
+for(const f of fs){const {data,error}=await db.storage.from(BUCKET).createSignedUrl(f.path,3600);links.push(!error&&data?.signedUrl?`<p><a href="${esc(data.signedUrl)}" target="_blank" rel="noopener">${esc(f.name||"فتح المرفق")}</a></p>`:`<p>${esc(f.name)} — تعذر فتح الملف.</p>`);}holder.innerHTML=links.join("");}
+async function deleteReport(id){if(!confirm("هل أنت متأكد من حذف هذا التقرير ومرفقاته؟"))return;const r=reports.find(x=>String(x.id)===String(id));if(!r)return;const paths=(Array.isArray(r.files)?r.files:[]).map(f=>f.path).filter(Boolean);
+if(paths.length){const {error}=await db.storage.from(BUCKET).remove(paths);if(error){alert("تعذر حذف المرفقات: "+error.message);return;}}
+const {error}=await db.from(TABLE).delete().eq("id",id);if(error){alert("تعذر حذف التقرير: "+error.message);return;}alert("تم حذف التقرير.");await loadReports();}
+async function start(){const {data}=await db.auth.getSession();if(data.session)await showArchive();}start();
+</script></body></html>
