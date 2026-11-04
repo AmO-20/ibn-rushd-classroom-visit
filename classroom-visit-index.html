@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الزيارة الصفية | مدارس ابن رشد</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--green:#176b45;--gold:#c69b38;--light:#f3f7f4}*{box-sizing:border-box}
+body{margin:0;background:var(--light);font-family:Tahoma,Arial,sans-serif;color:#24352c}
+header{background:linear-gradient(120deg,#105638,#218357);color:white;text-align:center;padding:22px 14px}
+header img{width:105px;height:105px;object-fit:contain;background:white;border-radius:15px;padding:6px}
+header h1{font-size:23px;margin:12px 0 5px}header p{margin:4px}
+.school{display:block;width:min(94%,760px);max-height:260px;object-fit:cover;margin:18px auto;border-radius:14px}
+main{max-width:900px;margin:18px auto;padding:0 12px}.card{background:white;border-radius:15px;padding:20px;margin:14px 0;box-shadow:0 3px 14px #173c2812}
+h2{color:var(--green);font-size:20px;margin-top:0}label{display:block;font-weight:bold;margin:14px 0 7px}
+input,select,textarea{width:100%;padding:12px;border:1px solid #cbd8cf;border-radius:9px;font:inherit;background:white}
+textarea{min-height:100px;resize:vertical}button,.btn{border:0;border-radius:9px;padding:12px 19px;font:inherit;font-weight:bold;cursor:pointer;background:var(--green);color:white}
+.gold{background:var(--gold);color:#18251d}.topbar{max-width:900px;margin:14px auto 0;padding:0 12px;display:flex;justify-content:flex-start}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.hidden{display:none!important}
+.notice{padding:12px;border-radius:9px;margin:12px 0;background:#edf7ef}.error{background:#fff0ef;color:#a22}
+.rating{border:1px solid #e0e9e2;border-radius:10px;padding:14px;margin:12px 0;background:#fff}
+.rating h3{font-size:16px;line-height:1.8;margin:0 0 10px;color:#263c30}
+.indicator{padding:12px 10px;border-top:1px solid #e7eee8}.indicator p{margin:0 0 8px;line-height:1.7}
+.levels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.levels label{display:flex;align-items:center;justify-content:center;gap:5px;border:1px solid #dbe6dd;border-radius:8px;padding:9px 4px;margin:0;font-size:13px;font-weight:normal}
+.levels input{width:auto;margin:0;accent-color:var(--green)}
+footer{text-align:center;padding:20px;color:#68786e;font-size:13px}small{color:#69766e}
+@media(max-width:520px){.levels{grid-template-columns:repeat(2,minmax(0,1fr))}.card{padding:15px}}
+</style></head><body>
+<header>
+<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuLk5bR1ni6ys-QIgWOQWxMebvicBWO1rJGzfkJuIchNVIpRky3_LkD0o&s=10" alt="شعار مدارس ابن رشد">
+<h1>مدارس ابن رشد</h1><p>الزيارة الصفية</p>
+</header>
+<div class="topbar"><a class="btn gold" href="reports.html" style="text-decoration:none">أرشيف التقارير</a></div>
+<img class="school" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTKgiuJxwAraFcx1a1eYQMa5trb_B96hSKz0gPPzPc4Og&s=10" alt="مبنى المدرسة">
+<main>
+<section class="card" id="gate"><h2>الدخول إلى نموذج الزيارة الصفية</h2>
+<label for="gatePassword">كلمة المرور</label><input id="gatePassword" type="password" placeholder="أدخل كلمة المرور">
+<div class="actions"><button type="button" onclick="enterForm()">دخول</button></div><p id="gateMessage"></p></section>
+<form id="reportForm" class="hidden">
+<section class="card"><h2>بيانات الزيارة الصفية</h2>
+<label for="visitDate">التاريخ</label><input id="visitDate" type="date" required>
+<label for="employee">اسم الموظف</label><select id="employee" required><option value="">اختر اسم الموظف</option></select>
+<label for="specialty">التخصص</label><select id="specialty" required><option value="">اختر التخصص</option></select>
+</section>
+<section class="card"><h2>تقييم الزيارة الصفية</h2><p>اختر مستوى التقييم لكل مؤشر أداء بشكل مستقل.</p><div id="ratings"></div></section>
+<section class="card"><h2>ملخص الزيارة</h2>
+<label for="excellence">جوانب التميز</label><textarea id="excellence" placeholder="اكتب جوانب التميز التي تمت ملاحظتها..."></textarea>
+<label for="trainingNeeds">الاحتياجات التدريبية</label><textarea id="trainingNeeds" placeholder="اكتب الاحتياجات التدريبية المقترحة..."></textarea>
+<label for="evidence">إرفاق صور أو ملفات داعمة</label><input id="evidence" type="file" multiple accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx">
+<small>الحد الأقصى 12MB لكل ملف.</small><div id="fileMessage"></div>
+<div class="actions"><button id="submitButton" type="submit">إرسال التقرير وحفظه</button><button type="button" class="gold" onclick="location.reload()">إلغاء والعودة</button></div><p id="status"></p>
+</section></form></main>
+<footer>مدارس ابن رشد — نظام الزيارة الصفية</footer>
+<script>
+const SUPABASE_URL="https://dsgjmwrlffklrwbylhng.supabase.co";
+const SUPABASE_KEY="sb_publishable_vyTFz1z43ioVE5VTVJp33g_frdaWD-P";
+const TABLE="classroom_visit_reports",BUCKET="classroom-visit-evidence";
+const criteria=[["تنفذ المدرسة برامج وأنشطة لتعزيز القيم الإسلامية والهوية الوطنية لدى المتعلمين", ["توظيف أمثلة أو أنشطة مرتبطة بالقيم الإسلامية", "ربط المحتوى بالهوية الوطنية وتضمين أنشطة تعزز الانتماء للوطن"]], ["تنفذ المدرسة إجراءات تضمن مناخاً آمناً للتعلم والنمو نفسياً واجتماعياً", ["التعامل باحترام مع جميع المتعلمين", "شعور المتعلمين بالأمان داخل الصف والتعبير عن آرائهم دون خوف من الخطأ", "خلو البيئة من التنمر أو التهديد"]], ["يتوافر في بيئة التعلم مصادر وأنشطة متنوعة للتعلم تلبي احتياجات المتعلمين، ومنهم ذوو الإعاقة والموهوبون", ["تنوع الأنشطة وفق مستويات المتعلمين", "مراعاة الفروق الفردية (الإعاقة والموهوبون)"]], ["يدار الوقت في بيئة التعلم بفاعلية؛ لدعم التعلم وتلبية احتياجات المتعلمين، ومنهم ذوو الإعاقة والموهوبون", ["الالتزام بتوقيت كل مرحلة من الدرس (مقدمة - عرض - تطبيق - غلق)", "منح المتعلمين الذين يحتاجون وقتاً إضافياً فرصة إضافية دون الإخلال بجدول الحصة", "الانتقال السلس بين الأنشطة"]], ["يتاح للمتعلمين فرص متكافئة في الأنشطة والمناقشة الصفية، واستخدام مصادر التعلم", ["إشراك جميع المتعلمين", "تنوع أساليب المشاركة", "عدالة توزيع الفرص وتشجيع الطلاب المنعزلين عن المشاركة"]], ["توفر المدرسة مصادر تعلم متنوعة تدعم تنفيذ المناهج لتحقيق نواتج التعلم المستهدفة", ["استخدام مصادر تعلم متنوعة داخل الحصة (عرض، فيديو، أوراق عمل، منصة رقمية)", "توظيف المصادر بشكل مباشر لخدمة هدف الدرس وليس للعرض فقط", "ظهور أثر استخدام المصادر على فهم المتعلمين ومشاركتهم أثناء الحصة بوضوح"]], ["ينفذ المعلم أنشطة واستراتيجيات تدريس تستوفي نواتج التعلم المستهدفة في المنهج، وتتسق معها", ["تنوع الأنشطة والاستراتيجيات المرتبطة بأهداف الدرس", "وضوح ارتباط الأنشطة بنواتج التعلم", "تحقق نواتج التعلم من خلال تنفيذ الأنشطة"]], ["تتنوع استراتيجيات التدريس وفقاً لقدرات المتعلمين، وتراعي الفروق الفردية بينهم", ["تنوع الاستراتيجيات وفق مستويات المتعلمين", "مراعاة الفروق الفردية أثناء التنفيذ", "مشاركة جميع المتعلمين حسب قدراتهم"]], ["يستخدم المعلم مصادر تعلم رقمية تلبي احتياجات المتعلمين بمختلف فئاتهم", ["استخدام مصادر رقمية متنوعة (منصة، فيديو، تطبيق) تخدم أهداف الدرس", "تكييف استخدام المصادر الرقمية لتناسب مستويات واحتياجات جميع المتعلمين"]], ["تنفذ المدرسة أنشطة تعليم وتعلم تركز على تطبيقات عملية ترتبط بحياة المتعلمين", ["تنفيذ أنشطة عملية يطبق فيها الطلاب ما تعلموه في مواقف من حياتهم اليومية", "ربط المهارات والدرس بتجارب واقعية مثل أمثلة من البيت أو المجتمع لزيادة الفهم"]], ["تشجع بيئة التعلم داخل الصف على تنمية مهارات القراءة والكتابة لدى المتعلمين", ["تضمين أنشطة قراءة وكتابة مرتبطة بالدرس", "تشجيع المتعلمين على التعبير والكتابة والمشاركة", "تصحيح الأخطاء والسلامة اللغوية"]], ["تشجع بيئة التعلم داخل الصف على تنمية المهارات العددية (الحساب) لدى المتعلمين", ["دمج أرقام أو إحصائيات أو تواريخ ضمن سياق الدرس لتعزيز الفهم", "تشجيع المتعلمين على استخدام مهارات التقدير (مثل تقدير زمن المهمة أو المسافات)", "استخدام المتعلمين للمصطلحات العددية (أكثر، أقل، ضعف، نسبة مئوية، الترتيب التسلسلي)"]], ["تشجع الممارسات التدريسية على تنمية مهارات التفكير والبحث والابتكار لدى المتعلمين", ["طرح أسئلة تفكير عليا (تحليل، تفسير، استنتاج: لماذا؟ كيف؟)", "توجيه المتعلمين لاستخراج المعلومات من الكتاب أو مصادر خارجية أو تجربة ذهنية", "التشجيع على تقديم حلول غير معتادة أو اقتراح نهاية مختلفة أو تصميم فكرة"]], ["تشجع بيئة التعلم تنمية المهارات العاطفية والاجتماعية لدى المتعلمين", ["تعزيز التعاون والعمل الجماعي بين الطلاب بمهام محددة", "تنمية مهارات التواصل واحترام آراء الآخرين", "دعم الثقة بالنفس والتعبير عن المشاعر بشكل إيجابي"]], ["يستخدم المعلم أساليب تحفيز تعزز الدافعية لدى المتعلمين", ["استخدام التعزيز الإيجابي (لفظي أو معنوي) لتحفيز جميع الطلاب", "توظيف أساليب تشجيعية متنوعة (نقاط، مسابقات، مكافآت، أوسمة)", "نجاح المعلم في جعل المتعلمين يبادرون بالمشاركة والحماس للأنشطة طوال وقت الحصة"]], ["يشارك المتعلمون في أنشطة التعلم بفاعلية، ويستمتعون بها", ["مبادرة المتعلمين للمشاركة وطرح الأسئلة بوضوح وحماس طوال الحصة", "انخراط المتعلمين في تنفيذ الأنشطة الصفية بتركيز عالٍ، مع الالتزام بالعمل الجماعي", "ظهور علامات البهجة والارتياح أثناء التعلم مع الرغبة المستمرة في إكمال التحديات"]], ["يستخدم المعلمون أساليب وأدوات تقويم متنوعة تشخيصية وبنائية وختامية للكشف عن الفروق الفردية في مستويات أداء المتعلمين المختلفة", ["استخدام التقويم في كافة مراحل الحصة (قبلي، بنائي أثناء الشرح، وختامي)", "توظيف أدوات متنوعة (مثل الأسئلة الشفهية، الاختبارات القصيرة أو تطبيقات التقويم التقني)", "تصميم أسئلة ومهام تتناسب مع مستويات الطلاب المختلفة (الضعيفة، المتوسطة، والمتميزة)"]], ["يطبق المعلم أساليب وأدوات تقويم متنوعة لقياس مستوى تحقق نواتج التعلم المستهدفة في المنهج لدى المتعلمين", ["استخدام طرق مختلفة للقياس (مثل الاختبارات القصيرة، الأنشطة الشفهية، أو المهام الأدائية)", "التأكد من أن كل سؤال أو نشاط يقيس فعلياً هدفاً محدداً من أهداف الدرس (نواتج التعلم)", "تحديد مستوى كل طالب من خلال التقويم، ومعرفة من أتقن المهارة ومن يحتاج إلى دعم إضافي"]], ["يقدم المعلم تغذية راجعة متنوعة للمتعلمين حسب الموقف التعليمي تركز على تحسين أدائهم", ["تقديم التعليق أو التصحيح للمتعلم أثناء المهمة أو فور انتهائها مباشرة لضمان الاستفادة", "توضيح سبب الخطأ وكيفية تصحيح المسار للوصول إلى الحل الصحيح، وعدم الاكتفاء بقول صح أو خطأ", "استخدام طرق مختلفة للتغذية الراجعة (مثل التصحيح الذاتي، وتبادل التصحيح بين الزملاء، أو التوجيه الفردي)"]], ["يظهر المتعلمون الاعتزاز بالقيم والهوية الوطنية", ["التزام المتعلمين بالتحدث بلغة عربية سليمة طوال زمن الحصة", "اعتزاز المتعلمين بتاريخ ومنجزات الوطن ورموزه في مشاركاتهم وأثناء الأنشطة", "التمسك بالقيم والأخلاق الإسلامية في التعامل والسمت العام"]], ["يظهر المتعلمون الاتجاهات الإيجابية نحو ذواتهم والآخرين", ["إظهار الثقة بالنفس أثناء المشاركة وطرح الآراء", "احترام المتعلمين آراء زملائهم والتعامل بإيجابية وتشجيع بعضهم أثناء الأنشطة"]], ["يظهر المتعلمون التزاماً بالممارسات الصحية السليمة", ["المحافظة على نظافة المكان والأدوات، والحرص على بيئة صفية صحية (تهوية وإضاءة)", "الالتزام بوضعية الجلوس الصحيحة، والاهتمام بالنظافة الشخصية والترتيب العام"]], ["يلتزم المتعلمون بقواعد السلوك والانضباط", ["الالتزام بالتعليمات والنظام داخل الحصة دون تكرار التنبيه، والمحافظة على الهدوء", "الحرص على آداب الاستئذان قبل المشاركة، والالتزام بمواعيد بدء ونهاية الحصة"]], ["يظهر المتعلمون الاستقلالية، والقدرة على التعلم الذاتي", ["الاعتماد على النفس في إنجاز المهام، والبحث عن المعلومة قبل طلب المساعدة", "القدرة على التقييم الذاتي وتصحيح الأخطاء بناءً على التغذية الراجعة"]], ["يظهر المتعلمون الاعتزاز بثقافتهم واحترام التنوع الثقافي في المجتمع", ["التعبير عن الاعتزاز بالثقافة والهوية الوطنية، وإظهار التقدير لثقافات ولهجات الآخرين", "تجنب أي تعليقات سلبية تجاه الاختلافات الثقافية، والتعامل بروح الانفتاح والاحترام"]]];
+const employees=["خالد علي حسن نشيلي", "محمود عبد الباقي صالح سلامه", "حسين حسن أحمد مرعي", "أحمد حاتم محمد فوده", "أحمد عيسى إبراهيم خرمي", "عبدالرحمن عيسى محمد أحمد", "محمد علي محمد السعيدي", "محمود سعد حسن أحمد", "مهند محمد يحيى صلوي", "أحمد علي علي شراحلي", "ريان علي موسى عقلي", "محمد علي أحمد شراحلي", "مصطفى عبدالعزيز مصطفى حسن", "محمد عبد الرحمن عبد المولى", "محمد عبد الفتاح محمد عليبه", "حذيفة عبده عكور حمدي", "محمد عبدالرحمن إبراهيم أحمد", "عبدالوهاب أحمد زرير", "سند علي ناصر عريشي", "أحمد سيد محمد خليل", "أحمد جابر نعيم مدخلي", "عطية حسين علي جابر", "حسين ناصر سوادي", "عبدالعزيز أحمد أبو جرة", "عبدالعزيز حسن علي دهل", "الفضل إبراهيم الصادق علي", "محمد حموده الصافي نعيم", "محمد حسين عواجي حكمي", "أحمد موسى حسين نجمي", "عبدالرحمن ولي حكمي", "إبراهيم علي محمد حكمي", "إبراهيم عبدالله محمد نجار", "هادي يحيى حمد خواجي", "خالد يحيى علي الحازمي", "حسين علي الشريف", "فهد منصور علي معشي", "أحمد حسن عبدالجليل", "مصطفى حسن إبراهيم أحمد"];
+const specialties=["اللغة العربية", "الرياضيات", "الدراسات الإسلامية", "العلوم", "اللغة الإنجليزية", "اللغة الصينية", "الفنية", "النشاط", "أخرى"];
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+function setTodayDate(){const d=new Date();document.getElementById("visitDate").value=[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");}
+setTodayDate();
+
+document.getElementById("employee").innerHTML += employees.map(x=>`<option>${x}</option>`).join("");
+document.getElementById("specialty").innerHTML += specialties.map(x=>`<option>${x}</option>`).join("");
+let counter=0;
+document.getElementById("ratings").innerHTML=criteria.map((group,i)=>`<div class="rating"><h3>${i+1}. ${group[0]}</h3>${group[1].map(ind=>{const id="indicator_"+(counter++);return `<div class="indicator"><p>${ind}</p><div class="levels">${["مرتفعة جداً","مرتفعة","متوسطة","منخفضة"].map(v=>`<label><input type="radio" name="${id}" value="${v}" required>${v}</label>`).join("")}</div></div>`}).join("")}</div>`).join("");
+function enterForm(){if(document.getElementById("gatePassword").value.trim()==="54321"){document.getElementById("gate").classList.add("hidden");document.getElementById("reportForm").classList.remove("hidden");window.scrollTo({top:0,behavior:"smooth"});}else{const m=document.getElementById("gateMessage");m.textContent="كلمة المرور غير صحيحة.";m.className="error";}}
+document.getElementById("evidence").addEventListener("change",()=>{const fs=[...document.getElementById("evidence").files];const bad=fs.find(f=>f.size>12*1024*1024);document.getElementById("fileMessage").textContent=bad?"الملف "+bad.name+" يتجاوز 12MB.":fs.length+" ملف/ملفات محددة.";document.getElementById("fileMessage").className=bad?"error":"notice";});
+document.getElementById("reportForm").addEventListener("submit",async e=>{
+e.preventDefault();const btn=document.getElementById("submitButton"),status=document.getElementById("status"),fs=[...document.getElementById("evidence").files];
+if(fs.some(f=>f.size>12*1024*1024)){status.textContent="يوجد ملف يتجاوز 12MB.";status.className="error";return;}
+const ratings={};let n=0;criteria.forEach((g,i)=>g[1].forEach((ind,j)=>{const name="indicator_"+n++;const selected=document.querySelector(`input[name="${name}"]:checked`);if(selected)ratings[ind+" — "+(i+1)]=selected.value;}));
+if(Object.keys(ratings).length!==criteria.reduce((s,g)=>s+g[1].length,0)){status.textContent="يرجى إكمال تقييم جميع مؤشرات الأداء.";status.className="error";return;}
+btn.disabled=true;btn.textContent="جارٍ حفظ التقرير...";status.textContent="يرجى الانتظار حتى يكتمل رفع الملفات وحفظ التقرير.";status.className="notice";const uploaded=[];
+try{
+for(const f of fs){const ext=(f.name.match(/\.([a-zA-Z0-9]{1,10})$/)||[])[1]||"bin";const path=`${Date.now()}_${Math.random().toString(36).slice(2)}.${ext.toLowerCase()}`;const {error}=await db.storage.from(BUCKET).upload(path,f,{upsert:false});if(error)throw new Error("فشل رفع الملف "+f.name+": "+error.message);uploaded.push({name:f.name,path,type:f.type,size:f.size});}
+const report={visit_date:document.getElementById("visitDate").value,employee:document.getElementById("employee").value,specialty:document.getElementById("specialty").value,ratings,excellence:document.getElementById("excellence").value.trim(),training_needs:document.getElementById("trainingNeeds").value.trim(),files:uploaded};
+const {error}=await db.from(TABLE).insert([report]);if(error)throw new Error("تعذر حفظ التقرير: "+error.message);
+alert("تم إرسال تقرير الزيارة الصفية وحفظه بنجاح.");document.getElementById("reportForm").reset();setTodayDate();location.href="index.html";
+}catch(err){for(const f of uploaded)await db.storage.from(BUCKET).remove([f.path]);status.textContent=err.message;status.className="error";btn.disabled=false;btn.textContent="إرسال التقرير وحفظه";}
+});
+</script></body></html>
